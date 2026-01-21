@@ -1,0 +1,5 @@
+{
+  "name": "拼图Ultimate (React版)",
+  "description": "高性能拼图生成器，支持500+图片流畅处理，iOS风格界面。",
+  "requestFramePermissions": []
+}
