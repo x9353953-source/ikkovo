@@ -8,9 +8,9 @@ import { saveImagesToDB, deleteImageFromDB, clearImagesFromDB, getAllImagesFromD
 import { Upload, Download, RefreshCw, XCircle, X, Info, ChevronDown } from 'lucide-react';
 const DEFAULT_SETTINGS: AppSettings = {
     cols: 3,
-    rowsPerGroup: 3, // ✅ 已修改：默认为 3 行
+    rowsPerGroup: 3,
     gap: 0,
-    aspectRatio: 0.75, // 3:4
+    aspectRatio: 0.75,
     customWidth: 1000,
     customHeight: 1500,
     showNumber: true,
@@ -36,21 +36,19 @@ const DEFAULT_SETTINGS: AppSettings = {
     stickerSize: 50,
     stickerX: 50,
     stickerY: 50
-};const App: React.FC = () => {
+};
+const App: React.FC = () => {
     const [images, setImages] = useState<ImageItem[]>([]);
     
-    // 定义存储的 Key (v3)
+    // Storage Key v3
     const SETTINGS_STORAGE_KEY = 'puzzle_settings_v3';
-
     const [settings, setSettings] = useState<AppSettings>(() => {
-        // 1. 🔍 关键修复：服务器环境直接返回默认值
         if (typeof window === 'undefined') return DEFAULT_SETTINGS;
 
         try {
             const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved) as any;
-                // 2. 🧹 数据清洗：重置图片文件为 null
                 return { 
                     ...DEFAULT_SETTINGS, 
                     ...parsed, 
@@ -59,11 +57,10 @@ const DEFAULT_SETTINGS: AppSettings = {
                 };
             }
         } catch (e) {
-            console.error("加载设置失败", e);
+            console.error("Load settings failed", e);
         }
         return DEFAULT_SETTINGS;
-    });// Auto-save settings
-    useEffect(() => {
+    });useEffect(() => {
         if (typeof window === 'undefined') return;
         const timeoutId = setTimeout(() => {
             localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
@@ -84,8 +81,6 @@ const DEFAULT_SETTINGS: AppSettings = {
     const replaceTargetId = useRef<string | null>(null);
     const cancelRef = useRef(false);
     const previewCanvasRef = useRef<HTMLCanvasElement>(null);
-
-    // Initial Load
     useEffect(() => {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(console.error);
@@ -94,7 +89,7 @@ const DEFAULT_SETTINGS: AppSettings = {
             try {
                 const saved = await getAllImagesFromDB();
                 if (saved && saved.length > 0) {
-                     setStatus({ isGenerating: true, progress: 0, message: '恢复会话...', currentGroup: 0, totalGroups: 0 });
+                     setStatus({ isGenerating: true, progress: 0, message: 'Restoring...', currentGroup: 0, totalGroups: 0 });
                      const chunkSize = 50;
                      for (let i = 0; i < saved.length; i += chunkSize) {
                          const chunk = saved.slice(i, i + chunkSize);
@@ -110,15 +105,16 @@ const DEFAULT_SETTINGS: AppSettings = {
             } catch (e) { console.error(e); }
         };
         restoreSession();
-    }, []);const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
-
+    }, []);
+    
+    const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
     const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
         await new Promise(r => setTimeout(r, 300));
         const files = Array.from(e.target.files);
         
         if (files.length > 50) {
-            setStatus(prev => ({ ...prev, isGenerating: true, message: '正在导入...', progress: 0 }));
+            setStatus(prev => ({ ...prev, isGenerating: true, message: 'Importing...', progress: 0 }));
         }
 
         const now = Date.now();
@@ -136,7 +132,9 @@ const DEFAULT_SETTINGS: AppSettings = {
         }
         setStatus(prev => ({ ...prev, isGenerating: false }));
         if (fileInputRef.current) fileInputRef.current.value = '';
-    };const handleReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    };
+
+    const handleReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0 || !replaceTargetId.current) return;
         const file = e.target.files[0];
         const existing = images.find(img => img.id === replaceTargetId.current);
@@ -158,7 +156,6 @@ const DEFAULT_SETTINGS: AppSettings = {
         replaceTargetId.current = null;
         if (replaceInputRef.current) replaceInputRef.current.value = '';
     };
-
     const triggerReplace = (id: string) => {
         replaceTargetId.current = id;
         replaceInputRef.current?.click();
@@ -171,7 +168,9 @@ const DEFAULT_SETTINGS: AppSettings = {
             return prev.filter(i => i.id !== id);
         });
         deleteImageFromDB(id);
-    };const clearImages = () => {
+    };
+
+    const clearImages = () => {
         if (confirm("确定要清空所有图片吗？")) {
             images.forEach(i => URL.revokeObjectURL(i.url));
             setImages([]); setResultBlobs([]); clearImagesFromDB();
@@ -209,10 +208,11 @@ const DEFAULT_SETTINGS: AppSettings = {
             return !isDup;
         }));
         idsToRemove.forEach(id => deleteImageFromDB(id));
-    };const runGeneration = async (repack: boolean) => {
+    };
+    const runGeneration = async (repack: boolean) => {
         if (images.length === 0) return alert("请先添加图片");
         cancelRef.current = false;
-        setStatus({ isGenerating: true, progress: 0, message: '准备中...', currentGroup: 0, totalGroups: 0 });
+        setStatus({ isGenerating: true, progress: 0, message: 'Preparing...', currentGroup: 0, totalGroups: 0 });
         setResultBlobs([]); setIsResultCollapsed(false);
 
         try {
@@ -223,14 +223,14 @@ const DEFAULT_SETTINGS: AppSettings = {
             );
             if (!cancelRef.current) {
                 setResultBlobs(blobs);
-                setStatus(prev => ({ ...prev, isGenerating: false, message: '生成完成', progress: 100 }));
+                setStatus(prev => ({ ...prev, isGenerating: false, message: 'Done', progress: 100 }));
                 setTimeout(() => document.getElementById('result-section')?.scrollIntoView({ behavior: 'smooth' }), 500);
             } else {
-                setStatus(prev => ({ ...prev, isGenerating: false, message: '已取消' }));
+                setStatus(prev => ({ ...prev, isGenerating: false, message: 'Cancelled' }));
             }
         } catch (error: any) {
             console.error(error);
-            alert(`生成出错: ${error.message}`);
+            alert(`Error: ${error.message}`);
             setStatus(prev => ({ ...prev, isGenerating: false }));
         }
     };
@@ -239,8 +239,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 
     const downloadCombined = async () => {
         if (resultBlobs.length === 0) return;
-        if (images.length > 100) return alert('⚠️ 图片数量超过100张，禁止合并导出。\n\n请使用 "打包下载 (ZIP)"。');
-        setStatus(prev => ({ ...prev, isGenerating: true, message: '合并中...' }));
+        if (images.length > 100) return alert('⚠️ 图片超过100张，禁止合并导出。请使用ZIP下载。');
+        setStatus(prev => ({ ...prev, isGenerating: true, message: 'Merging...' }));
         const combined = await combineBlobs(resultBlobs, settings.quality);
         setStatus(prev => ({ ...prev, isGenerating: false }));
         if (combined) {
@@ -248,8 +248,10 @@ const DEFAULT_SETTINGS: AppSettings = {
             link.href = URL.createObjectURL(combined);
             link.download = `拼图_合并_${Date.now()}.${settings.quality === 1 ? 'png' : 'jpg'}`;
             link.click();
-        } else { alert('合并失败，图片过大'); }
-    };const downloadIndividual = async () => {
+        } else { alert('Merge failed, image too large'); }
+    };
+
+    const downloadIndividual = async () => {
         if (resultBlobs.length === 0) return;
         if (!confirm(`即将下载 ${resultBlobs.length} 张图片，请保持页面在前台。`)) return;
         for (let i = 0; i < resultBlobs.length; i++) {
@@ -261,8 +263,7 @@ const DEFAULT_SETTINGS: AppSettings = {
             await new Promise(r => setTimeout(r, 1500));
         }
         alert('下载完成');
-    }
-
+    }    // Preview Effect
     useEffect(() => {
         if (!previewModalOpen || !previewCanvasRef.current || images.length === 0) return;
         const canvas = previewCanvasRef.current;
@@ -300,7 +301,9 @@ const DEFAULT_SETTINGS: AppSettings = {
         loadAndDraw();
     }, [previewModalOpen, settings, images]);
 
-    const totalSize = resultBlobs.reduce((acc, b) => acc + b.size, 0);return (
+    const totalSize = resultBlobs.reduce((acc, b) => acc + b.size, 0);
+
+    return (
         <div className="min-h-screen pb-32 max-w-2xl mx-auto bg-[#F2F2F7]">
             <header className="sticky top-0 z-50 bg-[#F2F2F7]/90 backdrop-blur-xl border-b border-gray-200/50 px-5 py-3 flex justify-between items-center h-[52px]">
                 <h1 className="text-[20px] font-bold text-black flex items-center gap-2">
@@ -406,4 +409,14 @@ const DEFAULT_SETTINGS: AppSettings = {
                         <div className="pt-5 px-4 pb-4"><h3 className="text-[17px] font-bold text-black mb-1">⚠️ 警告</h3><p className="text-[13px] text-black leading-snug">确定要重置吗？<br />这将清空所有内容。</p></div>
                         <div className="flex border-t border-[#3C3C43]/30 h-[44px]">
                             <button onClick={() => setShowResetModal(false)} className="flex-1 text-[17px] text-[#007AFF] font-normal border-r border-[#3C3C43]/30 active:bg-gray-200/50 transition">取消</button>
-                            <
+                            <button onClick={confirmReset} className="flex-1 text-[17px] text-[#FF3B30] font-bold active:bg-gray-200/50 transition">重置</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default App;
+    
