@@ -1,4 +1,3 @@
-）
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ImageItem, AppSettings, GenerationStatus } from './types';
 import { ImageGrid } from './components/ImageGrid';
@@ -38,12 +37,10 @@ const DEFAULT_SETTINGS: AppSettings = {
     stickerSize: 50,
     stickerX: 50,
     stickerY: 50
-};
-
-const App: React.FC = () => {
+};const App: React.FC = () => {
     const [images, setImages] = useState<ImageItem[]>([]);
+    
     // 定义存储的 Key
-// 定义存储的 Key
     const SETTINGS_STORAGE_KEY = 'puzzle_settings_v2';
 
     const [settings, setSettings] = useState<AppSettings>(() => {
@@ -81,9 +78,7 @@ const App: React.FC = () => {
         }, 500); // 延迟 500ms 保存
 
         return () => clearTimeout(timeoutId);
-    }, [settings]);
-
-    const [status, setStatus] = useState<GenerationStatus>({ isGenerating: false, progress: 0, message: '', currentGroup: 0, totalGroups: 0 });
+    }, [settings]);const [status, setStatus] = useState<GenerationStatus>({ isGenerating: false, progress: 0, message: '', currentGroup: 0, totalGroups: 0 });
     const [resultBlobs, setResultBlobs] = useState<Blob[]>([]);
     const [showSizes, setShowSizes] = useState(false);
     const [previewModalOpen, setPreviewModalOpen] = useState(false);
@@ -132,17 +127,13 @@ const App: React.FC = () => {
             }
         };
         restoreSession();
-    }, []);
-
-    // Simple ID generator
+    }, []);// Simple ID generator
     const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
     const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
-        
         // Critical buffer: Wait 300ms for device to return from album and recover memory
         await new Promise(r => setTimeout(r, 300));
-
         const files = Array.from(e.target.files);
         const chunkSize = 50;
         
@@ -152,7 +143,6 @@ const App: React.FC = () => {
         }
 
         const now = Date.now();
-
         for (let i = 0; i < files.length; i += chunkSize) {
             const chunk = files.slice(i, i + chunkSize);
             const newImages: ImageItem[] = chunk.map((file, idx) => ({
@@ -162,7 +152,6 @@ const App: React.FC = () => {
                 name: file.name,
                 timestamp: now + i + idx
             }));
-            
             // Persist to DB
             await saveImagesToDB(newImages.map(img => ({
                 id: img.id,
@@ -170,7 +159,6 @@ const App: React.FC = () => {
                 file: img.file,
                 timestamp: img.timestamp
             })));
-
             setImages(prev => [...prev, ...newImages]);
             
             // Give UI a moment to breathe and render the grid updates
@@ -178,7 +166,6 @@ const App: React.FC = () => {
         }
         
         setStatus(prev => ({ ...prev, isGenerating: false }));
-        
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
@@ -203,7 +190,6 @@ const App: React.FC = () => {
             }
             return img;
         }));
-        
         if (replaceTargetId.current) {
             await saveImageToDB({
                 id: replaceTargetId.current,
@@ -215,9 +201,7 @@ const App: React.FC = () => {
         
         replaceTargetId.current = null;
         if (replaceInputRef.current) replaceInputRef.current.value = '';
-    };
-
-    const triggerReplace = (id: string) => {
+    };const triggerReplace = (id: string) => {
         replaceTargetId.current = id;
         replaceInputRef.current?.click();
     };
@@ -284,17 +268,15 @@ const App: React.FC = () => {
             }
             return !isDup;
         }));
-        
         idsToRemove.forEach(id => deleteImageFromDB(id));
     };
-
-    const runGeneration = async (repack: boolean) => {
+const runGeneration = async (repack: boolean) => {
         if (images.length === 0) return alert("请先添加图片");
-        
         cancelRef.current = false;
         setStatus({ isGenerating: true, progress: 0, message: '准备中...', currentGroup: 0, totalGroups: 0 });
         setResultBlobs([]);
-        setIsResultCollapsed(false); // Reset collapse state on new generation
+        setIsResultCollapsed(false);
+        // Reset collapse state on new generation
 
         try {
             const blobs = await generateCollages(
@@ -320,16 +302,13 @@ const App: React.FC = () => {
 
     const handleCancel = () => {
         cancelRef.current = true;
-    };
-
-    const downloadCombined = async () => {
+    };const downloadCombined = async () => {
         if (resultBlobs.length === 0) return;
         if (images.length > 100) return alert('⚠️ 图片数量超过100张，禁止合并导出。\n\n请使用 "打包下载 (ZIP)"。');
         
         setStatus(prev => ({ ...prev, isGenerating: true, message: '合并图片中...' }));
         const combined = await combineBlobs(resultBlobs, settings.quality);
         setStatus(prev => ({ ...prev, isGenerating: false }));
-
         if (combined) {
             const link = document.createElement('a');
             link.href = URL.createObjectURL(combined);
@@ -344,7 +323,6 @@ const App: React.FC = () => {
         if (resultBlobs.length === 0) return;
         const confirmMsg = `即将开始逐张下载 ${resultBlobs.length} 张图片。\n\n⚠️ 为防止浏览器拦截，每张图片之间将有 1.5 秒的间隔。\n\n请保持页面在前台，不要关闭。`;
         if (!confirm(confirmMsg)) return;
-
         for (let i = 0; i < resultBlobs.length; i++) {
             const blob = resultBlobs[i];
             const link = document.createElement('a');
@@ -356,9 +334,7 @@ const App: React.FC = () => {
             await new Promise(r => setTimeout(r, 1500));
         }
         alert('下载队列已完成');
-    }
-
-    // Effect for the large preview modal drawing
+    }// Effect for the large preview modal drawing
     useEffect(() => {
         if (!previewModalOpen || !previewCanvasRef.current || images.length === 0) return;
 
@@ -423,9 +399,7 @@ const App: React.FC = () => {
 
     }, [previewModalOpen, settings.maskMode, settings.stickerImage, settings.stickerSize, settings.stickerX, settings.stickerY, images]);
 
-    const totalSize = resultBlobs.reduce((acc, b) => acc + b.size, 0);
-
-    return (
+    const totalSize = resultBlobs.reduce((acc, b) => acc + b.size, 0);return (
         <div className="min-h-screen pb-32 max-w-2xl mx-auto bg-[#F2F2F7]">
             {/* Header */}
             <header className="sticky top-0 z-50 bg-[#F2F2F7]/90 backdrop-blur-xl border-b border-gray-200/50 px-5 py-3 flex justify-between items-center h-[52px]">
@@ -505,19 +479,17 @@ const App: React.FC = () => {
                              <X size={16} />
                          </button>
                      </div>
-                </div>
-
-                {/* Result Section */}
+                </div>{/* Result Section */}
                 {resultBlobs.length > 0 && !status.isGenerating && (
                     <div id="result-section" className="ios-card bg-white rounded-xl shadow-sm animate-fade-in overflow-hidden">
                         <div 
                             className="flex items-center justify-between p-4 bg-white border-b border-gray-100 cursor-pointer select-none active:bg-gray-50 transition"
                             onClick={() => setIsResultCollapsed(!isResultCollapsed)}
                         >
-                             <div>
+                            <div>
                                 <div className="text-[17px] font-bold text-[#34C759]">生成结果</div>
                                 <div className="text-[10px] text-gray-400 mt-0.5">预览与下载拼图</div>
-                             </div>
+                            </div>
                              <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isResultCollapsed ? '' : 'rotate-180'}`} />
                         </div>
 
@@ -594,8 +566,8 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            {/* Floating Notes Button */}
-            {!localStorage.getItem('puzzle_hide_notes_v1') && (
+            {/* Floating Notes Button (修复版) */}
+            {(typeof window !== 'undefined' && !localStorage.getItem('puzzle_hide_notes_v1')) && (
                 <div className="fixed right-5 bottom-28 z-40 transition-all duration-300 hover:scale-105">
                     <button 
                         onClick={() => setShowNotes(true)} 
