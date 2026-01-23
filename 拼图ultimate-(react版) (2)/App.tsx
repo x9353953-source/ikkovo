@@ -43,15 +43,20 @@ const DEFAULT_SETTINGS: AppSettings = {
 const App: React.FC = () => {
     const [images, setImages] = useState<ImageItem[]>([]);
     // 定义存储的 Key
-const SETTINGS_STORAGE_KEY = 'puzzle_settings_v2';
+// 定义存储的 Key
+    const SETTINGS_STORAGE_KEY = 'puzzle_settings_v2';
 
-const [settings, setSettings] = useState<AppSettings>(() => {
+    const [settings, setSettings] = useState<AppSettings>(() => {
+        // 1. 🔍 关键修复：如果是服务器构建环境，直接返回默认值，防止报错
+        if (typeof window === 'undefined') return DEFAULT_SETTINGS;
+
         try {
             const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
             if (saved) {
-                const parsed = JSON.parse(saved);
-                // ⚠️ 关键修复：强制重置图片文件为 null
-                // 因为 LocalStorage 存不了文件，读取回来的空对象会导致生成器崩溃
+                // 使用 as any 绕过一些严格的类型检查
+                const parsed = JSON.parse(saved) as any;
+                
+                // 2. 🧹 数据清洗：强制重置图片文件为 null
                 return { 
                     ...DEFAULT_SETTINGS, 
                     ...parsed, 
@@ -59,16 +64,21 @@ const [settings, setSettings] = useState<AppSettings>(() => {
                     overlayImage: null 
                 };
             }
-            return DEFAULT_SETTINGS;
         } catch (e) {
             console.error("加载设置失败", e);
-            return DEFAULT_SETTINGS;
         }
-    });// Auto-save settings when they change
+        // 如果没有存档或出错，返回默认值
+        return DEFAULT_SETTINGS;
+    });
+
+    // Auto-save settings when they change
     useEffect(() => {
+        // 同样加一个保险，防止在非浏览器环境执行
+        if (typeof window === 'undefined') return;
+
         const timeoutId = setTimeout(() => {
             localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-        }, 500); // 延迟 500ms 保存，避免频繁读写
+        }, 500); // 延迟 500ms 保存
 
         return () => clearTimeout(timeoutId);
     }, [settings]);
