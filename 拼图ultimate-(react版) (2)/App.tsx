@@ -42,7 +42,27 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 const App: React.FC = () => {
     const [images, setImages] = useState<ImageItem[]>([]);
-    const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+    // 定义存储的 Key
+const SETTINGS_STORAGE_KEY = 'puzzle_settings_v2';
+
+const [settings, setSettings] = useState<AppSettings>(() => {
+    try {
+        const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        // 如果有保存的数据，将其覆盖在默认设置上
+        return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+    } catch (e) {
+        console.error("加载设置失败", e);
+        return DEFAULT_SETTINGS;
+    }
+});// Auto-save settings when they change
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+        }, 500); // 延迟 500ms 保存，避免频繁读写
+
+        return () => clearTimeout(timeoutId);
+    }, [settings]);
+
     const [status, setStatus] = useState<GenerationStatus>({ isGenerating: false, progress: 0, message: '', currentGroup: 0, totalGroups: 0 });
     const [resultBlobs, setResultBlobs] = useState<Blob[]>([]);
     const [showSizes, setShowSizes] = useState(false);
