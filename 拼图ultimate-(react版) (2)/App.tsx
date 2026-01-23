@@ -9,7 +9,7 @@ import { Upload, Download, RefreshCw, XCircle, X, Info, ChevronDown } from 'luci
 
 const DEFAULT_SETTINGS: AppSettings = {
     cols: 3,
-    rowsPerGroup: 50,
+    rowsPerGroup: 3, // ✅ 已修改：默认为 3 行，防止单张图片过大崩溃
     gap: 0,
     aspectRatio: 0.75, // 3:4
     customWidth: 1000,
@@ -26,8 +26,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     fontPos: 'bottom-center',
     quality: 0.8,
     overlayImage: null,
-    overlayOpacity: 1,
-    overlayBlendMode: 'source-over',
+    overlayOpacity: 1,overlayBlendMode: 'source-over',
     maskIndices: '',
     maskMode: 'line',
     lineStyle: 'cross',
@@ -37,13 +36,13 @@ const DEFAULT_SETTINGS: AppSettings = {
     stickerSize: 50,
     stickerX: 50,
     stickerY: 50
-};const App: React.FC = () => {
+};
+
+const App: React.FC = () => {
     const [images, setImages] = useState<ImageItem[]>([]);
     
     // 定义存储的 Key
-    const SETTINGS_STORAGE_KEY = 'puzzle_settings_v2';
-
-    const [settings, setSettings] = useState<AppSettings>(() => {
+    const SETTINGS_STORAGE_KEY = 'puzzle_settings_v3'; // ✅ 已修改：升级到 v3 以应用新默认值const [settings, setSettings] = useState<AppSettings>(() => {
         // 1. 🔍 关键修复：如果是服务器构建环境，直接返回默认值，防止报错
         if (typeof window === 'undefined') return DEFAULT_SETTINGS;
 
@@ -240,9 +239,7 @@ const DEFAULT_SETTINGS: AppSettings = {
         // Hard reset local storage and reload to ensure clean state
         localStorage.clear();
         window.location.reload();
-    };
-
-    // Duplicate Logic
+    };// Duplicate Logic
     const duplicates = useMemo(() => {
         const seen = new Set();
         const dups: ImageItem[] = [];
@@ -270,7 +267,8 @@ const DEFAULT_SETTINGS: AppSettings = {
         }));
         idsToRemove.forEach(id => deleteImageFromDB(id));
     };
-const runGeneration = async (repack: boolean) => {
+
+    const runGeneration = async (repack: boolean) => {
         if (images.length === 0) return alert("请先添加图片");
         cancelRef.current = false;
         setStatus({ isGenerating: true, progress: 0, message: '准备中...', currentGroup: 0, totalGroups: 0 });
@@ -334,7 +332,9 @@ const runGeneration = async (repack: boolean) => {
             await new Promise(r => setTimeout(r, 1500));
         }
         alert('下载队列已完成');
-    }// Effect for the large preview modal drawing
+    }
+
+    // Effect for the large preview modal drawing
     useEffect(() => {
         if (!previewModalOpen || !previewCanvasRef.current || images.length === 0) return;
 
@@ -399,7 +399,8 @@ const runGeneration = async (repack: boolean) => {
 
     }, [previewModalOpen, settings.maskMode, settings.stickerImage, settings.stickerSize, settings.stickerX, settings.stickerY, images]);
 
-    const totalSize = resultBlobs.reduce((acc, b) => acc + b.size, 0);return (
+    const totalSize = resultBlobs.reduce((acc, b) => acc + b.size, 0);
+    return (
         <div className="min-h-screen pb-32 max-w-2xl mx-auto bg-[#F2F2F7]">
             {/* Header */}
             <header className="sticky top-0 z-50 bg-[#F2F2F7]/90 backdrop-blur-xl border-b border-gray-200/50 px-5 py-3 flex justify-between items-center h-[52px]">
@@ -479,7 +480,8 @@ const runGeneration = async (repack: boolean) => {
                              <X size={16} />
                          </button>
                      </div>
-                </div>{/* Result Section */}
+                </div>
+                {/* Result Section */}
                 {resultBlobs.length > 0 && !status.isGenerating && (
                     <div id="result-section" className="ios-card bg-white rounded-xl shadow-sm animate-fade-in overflow-hidden">
                         <div 
