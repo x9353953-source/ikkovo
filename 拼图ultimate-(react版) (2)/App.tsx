@@ -1,4 +1,4 @@
-
+）
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ImageItem, AppSettings, GenerationStatus } from './types';
 import { ImageGrid } from './components/ImageGrid';
@@ -46,15 +46,25 @@ const App: React.FC = () => {
 const SETTINGS_STORAGE_KEY = 'puzzle_settings_v2';
 
 const [settings, setSettings] = useState<AppSettings>(() => {
-    try {
-        const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
-        // 如果有保存的数据，将其覆盖在默认设置上
-        return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
-    } catch (e) {
-        console.error("加载设置失败", e);
-        return DEFAULT_SETTINGS;
-    }
-});// Auto-save settings when they change
+        try {
+            const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // ⚠️ 关键修复：强制重置图片文件为 null
+                // 因为 LocalStorage 存不了文件，读取回来的空对象会导致生成器崩溃
+                return { 
+                    ...DEFAULT_SETTINGS, 
+                    ...parsed, 
+                    stickerImage: null, 
+                    overlayImage: null 
+                };
+            }
+            return DEFAULT_SETTINGS;
+        } catch (e) {
+            console.error("加载设置失败", e);
+            return DEFAULT_SETTINGS;
+        }
+    });// Auto-save settings when they change
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
